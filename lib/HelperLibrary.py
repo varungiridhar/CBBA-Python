@@ -111,7 +111,7 @@ def create_agents_and_tasks(num_agents: int, num_tasks: int, WorldInfoInput: Wor
     return AgentList, TaskList
 
 
-def create_agents_and_tasks_homogeneous(num_agents: int, num_tasks: int, WorldInfoInput: WorldInfo, config_data):
+def create_agents_and_tasks_homogeneous(num_agents: int, num_tasks: int, WorldInfoInput: WorldInfo, config_data, agent_pos, task_pos):
     """
     Generate agents and tasks (only 1 type) based on a json configuration file.
 
@@ -157,8 +157,10 @@ def create_agents_and_tasks_homogeneous(num_agents: int, num_tasks: int, WorldIn
 
         # AgentList.append(Agent(**agent_quad_default.__dict__))
         AgentList[idx_agent].agent_id = idx_agent
-        AgentList[idx_agent].x = random.uniform(WorldInfoInput.limit_x[0], WorldInfoInput.limit_x[1])
-        AgentList[idx_agent].y = random.uniform(WorldInfoInput.limit_y[0], WorldInfoInput.limit_y[1])
+        # AgentList[idx_agent].x = random.uniform(WorldInfoInput.limit_x[0], WorldInfoInput.limit_x[1])
+        # AgentList[idx_agent].y = random.uniform(WorldInfoInput.limit_y[0], WorldInfoInput.limit_y[1])
+        AgentList[idx_agent].x = agent_pos[idx_agent][0]
+        AgentList[idx_agent].y = agent_pos[idx_agent][1]
         AgentList[idx_agent].z = 0
 
     # create random tasks (track only)
@@ -167,8 +169,10 @@ def create_agents_and_tasks_homogeneous(num_agents: int, num_tasks: int, WorldIn
         TaskList.append(Task(**task_track_default.__dict__))
 
         TaskList[idx_task].task_id = idx_task
-        TaskList[idx_task].x = random.uniform(WorldInfoInput.limit_x[0], WorldInfoInput.limit_x[1])
-        TaskList[idx_task].y = random.uniform(WorldInfoInput.limit_y[0], WorldInfoInput.limit_y[1])
+        # TaskList[idx_task].x = random.uniform(WorldInfoInput.limit_x[0], WorldInfoInput.limit_x[1])
+        # TaskList[idx_task].y = random.uniform(WorldInfoInput.limit_y[0], WorldInfoInput.limit_y[1])
+        TaskList[idx_task].x = task_pos[idx_task][0]
+        TaskList[idx_task].y = task_pos[idx_task][1]
         TaskList[idx_task].z = 0
         TaskList[idx_task].start_time = 0.0
         TaskList[idx_task].duration = 0.0
