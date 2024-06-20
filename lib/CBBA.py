@@ -73,6 +73,14 @@ class CBBA(object):
         except Exception as e:
             print(e)
 
+        self.fig_3d = plt.figure()
+        self.ax_3d = plt.axes(projection='3d')
+        plt.title('Agent Paths with Time Windows')
+        self.ax_3d.set_xlabel("X")
+        self.ax_3d.set_ylabel("Y")
+        self.ax_3d.set_zlabel("Time")
+        self.ax_3d.set_aspect('auto')
+
     def settings(self, AgentList: list, TaskList: list, WorldInfoInput: WorldInfo,
                  max_depth: int, time_window_flag: bool):
         """
@@ -111,6 +119,7 @@ class CBBA(object):
         self.agent_index_list = []
         for n in range(self.num_agents):
             self.agent_index_list.append(self.AgentList[n].agent_id)
+
 
     def solve(self, AgentList: list, TaskList: list, WorldInfoInput: WorldInfo,
               max_depth: int, time_window_flag: bool):
@@ -702,10 +711,9 @@ class CBBA(object):
         """
         Plots CBBA outputs when there is time window for tasks.
         """
+        # clear this axes
+        self.ax_3d.clear()
 
-        # 3D plot
-        fig_3d = plt.figure()
-        ax_3d = fig_3d.add_subplot(111, projection='3d')
         # offset to plot text in 3D space
         offset = (self.WorldInfo.limit_x[1]-self.WorldInfo.limit_x[0]) / 50
 
@@ -718,12 +726,12 @@ class CBBA(object):
             else:
                 color_str = 'blue'
 
-            ax_3d.scatter([self.TaskList[m].x]*2, [self.TaskList[m].y]*2,
+            self.ax_3d.scatter([self.TaskList[m].x]*2, [self.TaskList[m].y]*2,
                           [self.TaskList[m].start_time, self.TaskList[m].end_time], marker='x', color=color_str)
-            ax_3d.plot3D([self.TaskList[m].x]*2, [self.TaskList[m].y]*2,
+            self.ax_3d.plot3D([self.TaskList[m].x]*2, [self.TaskList[m].y]*2,
                          [self.TaskList[m].start_time, self.TaskList[m].end_time],
                          linestyle=':', color=color_str, linewidth=3)
-            ax_3d.text(self.TaskList[m].x+offset, self.TaskList[m].y+offset, self.TaskList[m].start_time, "T"+str(m))
+            self.ax_3d.text(self.TaskList[m].x+offset, self.TaskList[m].y+offset, self.TaskList[m].start_time, "T"+str(m))
 
         # plot agents
         for n in range(self.num_agents):
@@ -733,35 +741,28 @@ class CBBA(object):
             # car agent is blue
             else:
                 color_str = 'blue'
-            ax_3d.scatter(self.AgentList[n].x, self.AgentList[n].y, 0, marker='o', color=color_str)
-            ax_3d.text(self.AgentList[n].x+offset, self.AgentList[n].y+offset, 0.1, "A"+str(n))
+            self.ax_3d.scatter(self.AgentList[n].x, self.AgentList[n].y, 0, marker='o', color=color_str)
+            self.ax_3d.text(self.AgentList[n].x+offset, self.AgentList[n].y+offset, 0.1, "A"+str(n))
 
             # if the path is not empty
             if self.path_list[n]:
                 Task_prev = self.lookup_task(self.path_list[n][0])
-                ax_3d.plot3D([self.AgentList[n].x, Task_prev.x], [self.AgentList[n].y, Task_prev.y],
+                self.ax_3d.plot3D([self.AgentList[n].x, Task_prev.x], [self.AgentList[n].y, Task_prev.y],
                              [0, self.times_list[n][0]], linewidth=2, color=color_str)
-                ax_3d.plot3D([Task_prev.x, Task_prev.x], [Task_prev.y, Task_prev.y],
+                self.ax_3d.plot3D([Task_prev.x, Task_prev.x], [Task_prev.y, Task_prev.y],
                              [self.times_list[n][0], self.times_list[n][0]+Task_prev.duration],
                              linewidth=2, color=color_str)
 
                 for m in range(1, len(self.path_list[n])):
                     if self.path_list[n][m] > -1:
                         Task_next = self.lookup_task(self.path_list[n][m])
-                        ax_3d.plot3D([Task_prev.x, Task_next.x], [Task_prev.y, Task_next.y],
+                        self.ax_3d.plot3D([Task_prev.x, Task_next.x], [Task_prev.y, Task_next.y],
                                      [self.times_list[n][m-1]+Task_prev.duration, self.times_list[n][m]],
                                      linewidth=2, color=color_str)
-                        ax_3d.plot3D([Task_next.x, Task_next.x], [Task_next.y, Task_next.y],
+                        self.ax_3d.plot3D([Task_next.x, Task_next.x], [Task_next.y, Task_next.y],
                                      [self.times_list[n][m], self.times_list[n][m]+Task_next.duration],
                                      linewidth=2, color=color_str)
                         Task_prev = Task(**Task_next.__dict__)
-        
-        plt.title('Agent Paths with Time Windows')
-        ax_3d.set_xlabel("X")
-        ax_3d.set_ylabel("Y")
-        ax_3d.set_zlabel("Time")
-        ax_3d.set_aspect('auto')
-
         # set legends
         colors = ["red", "blue", "red", "blue"]
         marker_list = ["o", "o", "x", "x"]
@@ -769,7 +770,7 @@ class CBBA(object):
         def f(marker_type, color_type): return plt.plot([], [], marker=marker_type, color=color_type, ls="none")[0]
         handles = [f(marker_list[i], colors[i]) for i in range(len(labels))]
         plt.legend(handles, labels, bbox_to_anchor=(1, 1), loc='upper left', framealpha=1)
-        self.set_axes_equal_xy(ax_3d, flag_3d=True)
+        self.set_axes_equal_xy(self.ax_3d, flag_3d=True)
 
         if self.duration_flag:
             # plot agent schedules
@@ -810,7 +811,6 @@ class CBBA(object):
             handles = [f(line_styles[i], colors[i], line_width_list[i]) for i in range(len(labels))]
             fig_schedule.legend(handles, labels, bbox_to_anchor=(1, 1), loc='upper left', framealpha=1)
 
-        plt.show(block=False)
 
     def plot_assignment_without_timewindow(self):
         """
