@@ -14,3 +14,5 @@ class Task:
     x: float = 0  # task position (meters)
     y: float = 0  # task position (meters)
     z: float = 0  # task position (meters)
+    current_pos: list = None
+    completed: bool = False  # task completion status
