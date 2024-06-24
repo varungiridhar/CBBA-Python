@@ -545,6 +545,283 @@ class CBBA(object):
         self.winners_list = copy.deepcopy(z)
         self.winner_bid_list = copy.deepcopy(y)
         return time_mat_new
+    
+    def communicate_asynchronous(self, time_mat: list, iter_idx: int):
+        """
+        Runs consensus between neighbors. Checks for conflicts and resolves among agents.
+        This is a message passing scheme described in Table 1 of: "Consensus-Based Decentralized Auctions for
+        Robust Task Allocation", H.-L. Choi, L. Brunet, and J. P. How, IEEE Transactions on Robotics,
+        Vol. 25, (4): 912 - 926, August 2009
+
+        Note: Table 1 is the action rule for agent i based on communication with agent k regarding task j.
+        The big for-loop with tons of if-else is the exact implementation of Table 1, for the sake of readability.
+        """
+
+        # time_mat is the matrix of time of updates from the current winners
+        # iter_idx is the current iteration
+
+        time_mat_new = copy.deepcopy(time_mat)
+
+        # Copy data
+        old_z = copy.deepcopy(self.winners_list)
+        old_y = copy.deepcopy(self.winner_bid_list)
+        z = copy.deepcopy(old_z)
+        y = copy.deepcopy(old_y)
+
+        epsilon = 10e-6
+
+        # Start communication between agents
+        # sender   = k
+        # receiver = i
+        # task     = j
+
+        for k in range(self.num_agents):
+            for i in range(self.num_agents):
+                if self.graph[k][i] == 1:
+                    for j in range(self.num_tasks):
+                        # Implement table for each task
+
+                        # Entries 1 to 4: Sender thinks he has the task
+                        if old_z[k][j] == k:
+                            
+                            # Entry 1: Update or Leave
+                            if z[i][j] == i:
+                                if old_y[k][j] > old_y[i][j]:
+                                    # Update & Rebroadcast
+                                    z[i][j] = old_z[k][j]
+                                    y[i][j] = old_y[k][j]
+                                    time_mat_new[i][j] = time_mat[k][j]
+                                    # @todo: rebroadcast
+                                elif old_y[k][j] == old_y[i][j] and old_z[k][j] < old_z[i][j]:
+                                    # Update & Rebroadcast
+                                    z[i][j] = old_z[k][j]
+                                    y[i][j] = old_y[k][j]
+                                    time_mat_new[i][j] = time_mat[k][j]
+                                    # @todo: rebroadcast
+                                else:
+                                    pass
+                                    # Update time & Rebroadcast
+                                    time_mat_new[i][j] = time_mat[k][j]
+                                    # @todo: rebroadcast
+
+                            # Entry 2: Update
+                            elif z[i][j] == k:
+                                if time_mat[k][j] > time_mat_new[i][j]:
+                                    # Update & Rebroadcast
+                                    z[i][j] = old_z[k][j]
+                                    y[i][j] = old_y[k][j]
+                                    time_mat_new[i][j] = time_mat[k][j]
+
+                                    pass
+                                elif abs(time_mat[k][j] - time_mat[i][j]) < epsilon:
+                                    # Leave & No-Rebroadcast
+                                    pass
+                                else:
+                                    # Leave & No-Rebroadcast
+                                    pass
+                    
+                            # Entry 3: Update or Leave
+                            elif z[i][j] > -1:
+                                if old_y[k][j] > old_y[i][j] and time_mat[k][j] >= time_mat[i][j]:
+                                    # Update & Rebroadcast
+                                    z[i][j] = old_z[k][j]
+                                    y[i][j] = old_y[k][j]
+                                    time_mat_new[i][j] = time_mat[k][j]
+                                    # propagate the new information
+                                    pass
+                                elif old_y[k][j] < old_y[i][j] and time_mat[k][j] <= time_mat[i][j]:
+                                    # Leave & Rebroadcast
+                                    pass
+                                elif old_y[k][j] == old_y[i][j]:
+                                    # Leave & Rebroadcast
+                                    pass
+                                elif old_y[k][j] < old_y[i][j] and time_mat[k][j] > time_mat[i][j]:
+                                    # Update & Rebroadcast
+                                    z[i][j] = old_z[k][j]
+                                    y[i][j] = old_y[k][j]
+                                    time_mat_new[i][j] = time_mat[k][j]
+                                    # propagate the new information
+                                elif old_y[k][j] > old_y[i][j] and time_mat[k][j] < time_mat[i][j]:
+                                    # Update & Rebroadcast
+                                    z[i][j] = old_z[k][j]
+                                    y[i][j] = old_y[k][j]
+                                    time_mat_new[i][j] = time_mat[k][j]
+                                    # propagate the new information
+
+                            # Entry 4: Update
+                            elif z[i][j] == -1:
+                                # Update & Rebroadcast
+                                z[i][j] = old_z[k][j]
+                                y[i][j] = old_y[k][j]
+                                time_mat_new[i][j] = time_mat[k][j]
+                                # propagate the new information
+
+                            else:
+                                print(z[i][j])
+                                raise Exception("Unknown winner value: please revise!")
+
+                        # Entries 5 to 8: Sender thinks receiver has the task
+                        elif old_z[k][j] == i:
+
+                            # Entry 5: Leave
+                            if z[i][j] == i:
+                                if abs(time_mat[k][j] - time_mat[i][j]) < epsilon:
+                                    # Leave & no-broadcast
+                                    # Do nothing
+                                    pass
+                                
+                            # Entry 6: Reset
+                            elif z[i][j] == k:
+                                # Reset & Rebroadcast*
+                                z[i][j] = -1
+                                y[i][j] = -1
+                                # @todo: rebroadcast original information (empty bid with current time)
+
+                            # Entry 7: Reset or Leave
+                            elif z[i][j] > -1:
+                                # Leave & Rebroadcast
+                                # @todo: rebroadcast
+                                pass
+                                
+                            # Entry 8: Leave
+                            elif z[i][j] == -1:
+                                # Leave & Rebroadcast*
+                                # @todo: rebroadcast original information (empty bid with current time)
+                                pass
+
+                            else:
+                                print(z[i][j])
+                                raise Exception("Unknown winner value: please revise!")
+
+                        # Entries 9 to 13: Sender thinks someone else has the task
+                        elif old_z[k][j] > -1:
+                            m = old_z[k][j]
+                            
+                            # Entry 9: Update or Leave
+                            if z[i][j] == i:
+                                if old_y[k][j] > old_y[i][j]:
+                                    # Update & Rebroadcast
+                                    z[i][j] = old_z[k][j]
+                                    y[i][j] = old_y[k][j]
+                                    time_mat_new[i][j] = time_mat[k][j]
+                                        
+                                elif old_y[k][j] == old_y[i][j] and old_z[k][j] < old_z[i][j]:
+                                    # Update & Rebroadcast
+                                    z[i][j] = old_z[k][j]
+                                    y[i][j] = old_y[k][j]
+                                    time_mat_new[i][j] = time_mat[k][j]
+                                else:
+                                    # Update Time & Rebroadcast
+                                    time_mat_new[i][j] = time_mat[k][j]
+                            # Entry 10: Update or Reset
+                            elif z[i][j] == k:
+                                # Update & Rebroadcast
+                                z[i][j] = old_z[k][j]
+                                y[i][j] = old_y[k][j]
+                                time_mat_new[i][j] = time_mat[k][j]
+
+                            # Entry 11: Update or Leave
+                            elif z[i][j] == m:
+                                if time_mat[k][j] > time_mat[i][j]:  # Update
+                                    # Update & Rebroadcast
+                                    z[i][j] = old_z[k][j]
+                                    y[i][j] = old_y[k][j]
+                                    time_mat_new[i][j] = time_mat[k][j]
+                            
+                                elif abs(time_mat[k][j] - time_mat[i][j]) < epsilon:
+                                    # Leave & No-Rebroadcast
+                                    pass
+                                else:
+                                    # Leave & No-Rebroadcast
+                                    pass
+                            # Entry 12: Update, Reset or Leave
+                            elif z[i][j] > -1:
+                                if old_y[k][j] > old_y[i][j] and time_mat[k][j] >= time_mat[i][j]:
+                                    # Update & Rebroadcast
+                                    z[i][j] = old_z[k][j]
+                                    y[i][j] = old_y[k][j]
+                                    time_mat_new[i][j] = time_mat[k][j]
+                                    # @todo: rebroadcast
+                                    pass
+                                elif old_y[k][j] < old_y[i][j] and time_mat[k][j] <= time_mat[i][j]:
+                                    # Leave & Rebroadcast
+                                    # @todo: rebroadcast
+                                    pass
+                                elif old_y[k][j] < old_y[i][j] and time_mat[k][j] > time_mat[i][j]:
+                                    # Update & Rebroadcast
+                                    z[i][j] = old_z[k][j]
+                                    y[i][j] = old_y[k][j]
+                                    time_mat_new[i][j] = time_mat[k][j]
+                                    # @todo: rebroadcast
+                                    pass
+                                elif old_y[k][j] > old_y[i][j] and time_mat[k][j] < time_mat[i][j]:
+                                    # Leave & Rebroadcast
+                                    # @todo: rebroadcast
+                                    pass
+
+                            # Entry 13: Update or Leave
+                            elif z[i][j] == -1:
+                                # Update & Rebroadcast
+                                z[i][j] = old_z[k][j]
+                                y[i][j] = old_y[k][j]
+                                time_mat_new[i][j] = time_mat[k][j]
+                                # @todo: rebroadcast
+                                pass
+
+                            else:
+                                raise Exception("Unknown winner value: please revise!")
+
+                        # Entries 14 to 17: Sender thinks no one has the task
+                        elif old_z[k][j] == -1:
+
+                            # Entry 14: Leave
+                            if z[i][j] == i:
+                                # Leave & Rebroadcast
+                                # @todo: rebroadcast
+                                pass
+
+                            # Entry 15: Update
+                            elif z[i][j] == k:
+                                # Update & Rebroadcast
+                                z[i][j] = old_z[k][j]
+                                y[i][j] = old_y[k][j]
+                                time_mat_new[i][j] = time_mat[k][j]
+                                # @todo: rebroadcast
+
+                            # Entry 16: Update or Leave
+                            elif z[i][j] > -1:
+                                if time_mat[k][j] > time_mat[i][j]:  # Update
+                                    # Update & Rebroadcast
+                                    z[i][j] = old_z[k][j]
+                                    y[i][j] = old_y[k][j]
+                                    time_mat_new[i][j] = time_mat[k][j]
+                                    # @todo: rebroadcast
+                                    pass
+
+                            # Entry 17: Leave
+                            elif z[i][j] == -1:
+                                # Leave & No-Rebroadcast
+                                # Do nothing
+                                pass
+                            else:
+                                raise Exception("Unknown winner value: please revise!")
+
+                            # End of table
+                        else:
+                            raise Exception("Unknown winner value: please revise!")
+
+                    # Update timestamps for all agents based on latest comm
+                    for n in range(self.num_agents):
+                        if (n != i) and (time_mat_new[i][n] < time_mat[k][n]):
+                            time_mat_new[i][n] = time_mat[k][n]
+                    time_mat_new[i][k] = iter_idx
+
+        # Copy data
+        self.winners_list = copy.deepcopy(z)
+        self.winner_bid_list = copy.deepcopy(y)
+        return time_mat_new
+        
+
 
     def compute_bid(self, idx_agent: int, feasibility: list):
         """
