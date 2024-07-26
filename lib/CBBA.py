@@ -72,14 +72,15 @@ class CBBA(object):
             self.compatibility_mat[self.agent_types.index("car")][self.task_types.index("rescue")] = 1
         except Exception as e:
             print(e)
-
-        self.fig_3d = plt.figure()
-        self.ax_3d = plt.axes(projection='3d')
-        plt.title('Agent Paths with Time Windows')
-        self.ax_3d.set_xlabel("X")
-        self.ax_3d.set_ylabel("Y")
-        self.ax_3d.set_zlabel("Time")
-        self.ax_3d.set_aspect('auto')
+        
+        if config_data["MODE"] == "experimental" or config_data["MODE"] == "debug":
+            self.fig_3d = plt.figure()
+            self.ax_3d = plt.axes(projection='3d')
+            plt.title('Agent Paths with Time Windows')
+            self.ax_3d.set_xlabel("X")
+            self.ax_3d.set_ylabel("Y")
+            self.ax_3d.set_zlabel("Time")
+            self.ax_3d.set_aspect('auto')
 
     def settings(self, AgentList: list, TaskList: list, WorldInfoInput: WorldInfo,
                  max_depth: int, time_window_flag: bool):
@@ -1048,6 +1049,23 @@ class CBBA(object):
         handles = [f(marker_list[i], colors[i]) for i in range(len(labels))]
         plt.legend(handles, labels, bbox_to_anchor=(1, 1), loc='upper left', framealpha=1)
         self.set_axes_equal_xy(self.ax_3d, flag_3d=True)
+        # convert to self.fig_3d to rgb
+        img = self.plt_fig_to_rgb(self.fig_3d)
+        return img
+    
+    def plt_fig_to_rgb(self, fig):
+        """
+        Convert a matplotlib figure to an RGB image and return image
+        """
+        # draw the renderer
+        fig.canvas.draw()
+
+        # Get the RGB buffer from the figure
+        w, h = fig.canvas.get_width_height()
+        buf = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8).reshape(h, w, 3)
+
+        return buf
+
 
         if self.duration_flag:
             # plot agent schedules

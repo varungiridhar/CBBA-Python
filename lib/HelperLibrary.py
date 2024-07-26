@@ -100,15 +100,7 @@ def create_agents_and_tasks(num_agents: int, num_tasks: int, WorldInfoInput: Wor
         #                                                    float(config_data["RESCUE_DEFAULT"]["DURATION"])))
         # TaskList[idx_task].end_time = TaskList[idx_task].start_time + TaskList[idx_task].duration
         TaskList[idx_task].start_time = 0.0
-        TaskList[idx_task].end_time = 100.0
-
-    for n in range(num_tasks):
-        print("Task " + str(n))
-        print(str(TaskList[n].x)+", "+str(TaskList[n].y)+", "+str(TaskList[n].z))
-        print(str(TaskList[n].start_time)+" - "+str(TaskList[n].end_time))
-    for m in range(num_agents):
-        print("Agent " + str(m))
-        print(str(AgentList[m].x)+", "+str(AgentList[m].y)+", "+str(AgentList[m].z))
+        TaskList[idx_task].end_time = 150.0
 
     return AgentList, TaskList
 
@@ -179,14 +171,6 @@ def create_agents_and_tasks_homogeneous(num_agents: int, num_tasks: int, WorldIn
         TaskList[idx_task].start_time = 0.0
         TaskList[idx_task].duration = 0.0
         TaskList[idx_task].end_time = 0.0
-
-    for n in range(num_tasks):
-        print("Task " + str(n))
-        print(str(TaskList[n].x)+", "+str(TaskList[n].y)+", "+str(TaskList[n].z))
-        print(str(TaskList[n].start_time)+" - "+str(TaskList[n].end_time))
-    for m in range(num_agents):
-        print("Agent " + str(m))
-        print(str(AgentList[m].x)+", "+str(AgentList[m].y)+", "+str(AgentList[m].z))
 
     return AgentList, TaskList
 
